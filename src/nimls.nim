@@ -66,9 +66,5 @@ proc getArguments(): Arguments =
   return arguments
 
 when isMainModule:
-  #[
-  let arguments: Arguments = defaultArguments()
-  echo arguments
-  ]#
   let arguments: Arguments = getArguments()
   echo arguments
