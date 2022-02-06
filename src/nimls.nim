@@ -3,5 +3,8 @@ import
   strutils,
   parseopt
 
+import nimlsutils
+
 when isMainModule:
-  echo "test"
+  let arguments: Arguments = defaultArguments()
+  echo arguments
