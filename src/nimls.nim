@@ -27,7 +27,7 @@ proc debugShowInputArguments(kind: CmdLineKind, key, value: string): bool =
   echo "value : ", value
 
 proc getArguments(): Arguments =
-  var arguments: Arguments = defaultArguments()
+  var arguments: Arguments = initArguments()
   var parserOption = initOptParser(commandLineParams().join(" "))
   for kind, key, value in parserOption.getOpt():
     discard debugShowInputArguments(kind, key, value)

@@ -11,8 +11,8 @@ type
     isShowTime: bool
 
 
-proc defaultArguments*(): Arguments =
-  let arguments: Arguments = (path: "./",
+proc initArguments*(targetPath: string = "./"): Arguments =
+  let arguments: Arguments = (path: targetPath,
                               isShowAll: false,
                               isShowDir: true,
                               isShowFile: true,
@@ -24,6 +24,6 @@ proc defaultArguments*(): Arguments =
   return arguments
 
 when isMainModule:
-  let arguments: Arguments = defaultArguments()
+  let arguments: Arguments = initArguments()
   echo "type: ", arguments.type
   echo "default arguments: ", arguments

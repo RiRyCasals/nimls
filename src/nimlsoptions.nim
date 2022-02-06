@@ -46,9 +46,8 @@ proc echoPath(arguments: Arguments): bool =
   for kindAndPath in walkDir(arguments.path):
   #==== filter options ====
     if arguments.isRecurse and kindAndPath.kind == pcDir:
-      var nextDieArguments: Arguments = defaultArguments()
-      nextDieArguments.path = kindAndPath.path
-      echo "\nd: " & $kindAndPath.path
+      let nextDieArguments: Arguments = initArguments(kindAndPath.path)
+      echo "\n d: " & $kindAndPath.path
       discard echoPath(nextDieArguments)
       continue
     if not arguments.isShowAll and kindAndPath.path.contains("/."):
@@ -108,9 +107,8 @@ when isMainModule:
   discard debugGetLastModificationTime("./testDir")
   echo "\n"
   ]#
-  var arguments: Arguments = defaultArguments()
+  var arguments: Arguments = initArguments("./testFile")
 
-  arguments.path = "./testFile"
   echo "file"
   discard echoPath(arguments) #---> cmdから直接ファイルを受け取った場合反応がない（waldDir(filePath)で止まるので)
   echo "\n"
