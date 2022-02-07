@@ -45,7 +45,7 @@ proc nimlsHelp(): string =
   """
 
 proc nimlsVersion(): string =
-  return "Nimls : 0.1.0"
+  return "Nimls : 0.0.0-develop"
 
 proc debugShowInputArguments(kind: CmdLineKind, key, value: string): bool =
   echo "kind : ", kind
@@ -77,6 +77,8 @@ proc getArguments(): Arguments =
             arguments.isShowFile = false
           of "i", "info":
             arguments.isShowInfo = true
+            arguments.isShowPermission = true
+            arguments.isShowSize = true
           of "p", "permission":
             arguments.isShowPermission = true
           of "r", "recurse":
@@ -93,7 +95,9 @@ proc getArguments(): Arguments =
 
 # kindAndPath -> 名前変えたい
 proc showPath(arguments: Arguments) =
+  echo $arguments
   for kindAndPath in walkDir(arguments.path):
+    echo $kindAndPath
     if not arguments.isShowAll and kindAndPath.path.contains("/."):
       continue
     if not arguments.isShowDir and kindAndPath.kind == pcDir:
@@ -102,10 +106,9 @@ proc showPath(arguments: Arguments) =
       continue
     var info, permission, size, created_at, access_at, modified_at: string
     if arguments.isRecurse and kindAndPath.kind == pcDir:
-      echo "\n", displayFormat(fmt"{$kindAndPath.kind}", $kindAndPath.path, info,
-                         permission, size, created_at, access_at, modified_at)
-      let nextDirArguments: Arguments = inheritanceArguments(kindAndPath.path,
-                                                             arguments)
+      echo "\n", displayFormat(fmt"{$kindAndPath.kind}", $kindAndPath.path, "")
+        #---- Argumentsからpathは切り離したほうが，全体的に都合がいい気がする
+      let nextDirArguments = inheritanceArguments(kindAndPath.path, arguments)
       showPath(nextDirArguments)
       echo ""
       continue
@@ -126,13 +129,9 @@ proc showPath(arguments: Arguments) =
 when isMainModule:
   echo "==== getArguments test ===="
   var arguments: Arguments = getArguments()
-  arguments.isShowAll= true
-  arguments.isShowPermission = true
-  arguments.isShowSize= true
-  arguments.isShowTime= true
   echo arguments
 
-  echo "==== current dir test ===="
+  echo "==== show path test ===="
   showPath(arguments)
 
   echo "==== file start test ===="

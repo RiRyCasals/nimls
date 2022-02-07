@@ -1,17 +1,29 @@
 import
   os,
   times,
-  strformat
+  strformat,
+  nimlsutils
 
 const readPermission = 4
 const writePermission = 2
 const execPermission = 1
 
-proc displayFormat*(kind, path, info, permission, size: string = "",
-                    created_at, access_at, modified_at: string = ""): string =
-  return fmt"{kind} {path} {info} {permission} {size} {created_at} {access_at} {modified_at}"
 
-proc convertPermissionToNumber*(permissions: set[FilePermission]): int =
+proc displayFormat*(kind: PathComponent, path, information: string = ""): string =
+  var displayKind: string
+  #kindの種類ごとに表示用文字に変換
+  case kind:
+    of pcFile:
+      displayKind = " f"
+    of pcDir:
+      displayKind = " d"
+    of pcLinkToFile:
+      displayKind = "lf"
+    of pcLinkToDir:
+      displayKind = "ld"
+  return &"{displayKind}:{path} \t {information}"
+
+proc convertPermission*(permissions: set[FilePermission]): string =
   var user, group, others: int
   for permission in permissions:
     case permission:
@@ -33,51 +45,60 @@ proc convertPermissionToNumber*(permissions: set[FilePermission]): int =
         others = others or writePermission
       of fpOthersExec:
         others = others or execPermission
-  return user * 100 +  group * 10 + others
+  return fmt"{user}{group}{others}"
 
 proc getInfoString*(path: string): string =
   let info = getFileInfo(path)
   return fmt"{$info.linkCount}, {$info.blockSize}"
 
-# getFileInfo から取得に変更？
+# getFileInfo から取得に変更？ -> 変更決定
 proc getPermissionsString*(path: string): string =
   let permissions = getFilePermissions(path)
-  return $convertPermissionToNumber(permissions)
+  return $convertPermission(permissions)
 
-# getFileInfo から取得に変更？
+# getFileInfo から取得に変更？ -> 変更決定
 # can not get directory size
 proc getFileSizeString*(path: string): string =
   let size = getFileSize(path)
   return $size
 
-# getFileInfo から取得に変更？
+# getFileInfo から取得に変更？ -> 変更決定
 proc getCreationTimeString*(path: string): string =
   let creationTime = getCreationTime(path)
   return $creationTime
 
-# getFileInfo から取得に変更？
+# getFileInfo から取得に変更？ -> 変更決定
 proc getLastAccessTimeString*(path: string): string =
   let lastAccessTime = getLastAccessTime(path)
   return $lastAccessTime
 
-# getFileInfo から取得に変更？
+# getFileInfo から取得に変更？ -> 変更決定
 proc getLastModificationTimeString*(path: string): string =
   let lastModificationTime = getLastModificationTime(path)
   return $lastModificationTime
 
+proc getInformation*(arguments: Arguments): string =
+  let information = getFileInfo(arguments.path)
+  var info, permission, size, modified_at, access_at, created_at: string
+  if arguments.isShowInfo:
+    #id?, linkCount, blockSize
+    info = $information.blockSize
+    modified_at = $information.lastWriteTime.format("yy/MM/dd-HH:mm")
+  if arguments.isShowpermission:
+    permission = convertPermission(information.permissions)
+  if arguments.isShowsize:
+    size = $information.size
+  if arguments.isShowtime:
+    modified_at = $information.lastWriteTime.format("yy/MM/dd(ddd)-HH:mm:ss")
+    access_at = $information.lastAccessTime.format("yy/MM/dd(ddd)-HH:mm:ss")
+    created_at = $information.creationTime.format("yy/MM/dd(ddd)-HH:mm:ss")
+  return fmt"{permission}  {size}  {info}  {modified_at}  {access_at}  {created_at}"
+
 
 when isMainModule:
-  echo "test format: ", displayFormat("kind", "path", "info",
-                                      "permission", "size",
-                                      "created_at", "access_at", "modified_at")
-  echo "dir  info: ", getInfoString("./testDir")
-  echo "file info: ", getInfoString("./testFile")
-  echo "dir  permission: ", getPermissionsString("./testDir")
-  echo "file permission: ", getPermissionsString("./testFile")
-  echo "file size: ", getFileSizeString("./testFile")
-  echo "dir  created_at: ", getCreationTimeString("./testDir")
-  echo "file created_at: ", getCreationTimeString("./testFile")
-  echo "dir  access_at: ", getLastAccessTimeString("./testDir")
-  echo "file access_at: ", getLastAccessTimeString("./testFile")
-  echo "dir  modified_at: ", getLastModificationTimeString("./testDir")
-  echo "file modified_at: ", getLastModificationTimeString("./testFile")
+  let arguments: Arguments = initArguments(path="./testFile",
+                                           isShowInfo=true,
+                                           isShowpermission=true,
+                                           isShowsize=true,
+                                           isShowTime=true)
+  echo displayFormat(pcFile, "./testFile", getInformation(arguments))
