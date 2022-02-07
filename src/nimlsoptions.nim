@@ -7,7 +7,8 @@ const readPermission = 4
 const writePermission = 2
 const execPermission = 1
 
-proc displayFormat*(kind, path, info, permission, size, created_at, access_at, modified_at: string): string =
+proc displayFormat*(kind, path, info, permission, size: string = "",
+                    created_at, access_at, modified_at: string = ""): string =
   return fmt"{kind} {path} {info} {permission} {size} {created_at} {access_at} {modified_at}"
 
 proc convertPermissionToNumber*(permissions: set[FilePermission]): int =
@@ -38,30 +39,37 @@ proc getInfoString*(path: string): string =
   let info = getFileInfo(path)
   return fmt"{$info.linkCount}, {$info.blockSize}"
 
+# getFileInfo から取得に変更？
 proc getPermissionsString*(path: string): string =
   let permissions = getFilePermissions(path)
   return $convertPermissionToNumber(permissions)
 
+# getFileInfo から取得に変更？
 # can not get directory size
 proc getFileSizeString*(path: string): string =
   let size = getFileSize(path)
   return $size
 
+# getFileInfo から取得に変更？
 proc getCreationTimeString*(path: string): string =
   let creationTime = getCreationTime(path)
   return $creationTime
 
+# getFileInfo から取得に変更？
 proc getLastAccessTimeString*(path: string): string =
   let lastAccessTime = getLastAccessTime(path)
   return $lastAccessTime
 
+# getFileInfo から取得に変更？
 proc getLastModificationTimeString*(path: string): string =
   let lastModificationTime = getLastModificationTime(path)
   return $lastModificationTime
 
 
 when isMainModule:
-  echo "test format: ", displayFormat("kind", "path", "info", "permission", "size", "created_at", "access_at", "modified_at")
+  echo "test format: ", displayFormat("kind", "path", "info",
+                                      "permission", "size",
+                                      "created_at", "access_at", "modified_at")
   echo "dir  info: ", getInfoString("./testDir")
   echo "file info: ", getInfoString("./testFile")
   echo "dir  permission: ", getPermissionsString("./testDir")
