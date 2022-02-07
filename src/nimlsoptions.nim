@@ -11,7 +11,6 @@ const execPermission = 1
 
 proc displayFormat*(kind: PathComponent, path, information: string = ""): string =
   var displayKind: string
-  #kindの種類ごとに表示用文字に変換
   case kind:
     of pcFile:
       displayKind = " f"
@@ -46,10 +45,6 @@ proc convertPermission*(permissions: set[FilePermission]): string =
       of fpOthersExec:
         others = others or execPermission
   return fmt"{user}{group}{others}"
-
-proc getInfoString*(path: string): string =
-  let info = getFileInfo(path)
-  return fmt"{$info.linkCount}, {$info.blockSize}"
 
 proc getInformation*(arguments: Arguments): string =
   let information = getFileInfo(arguments.path)

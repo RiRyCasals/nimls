@@ -32,11 +32,11 @@ proc nimlsHelp(): string =
       -?, --help      Show nimls document.
 
   Display options :
-      -i, --info        Show file and directory detail.
+      -i, --info        Show file and directory detail. (Detail: -ps options and edit date time)
       -p, --permission  Show file and directory permission.
       -r, --recurse     Recursively get files and directories name.
-      -s, --size        Show file size.
-      -t, --time        Show file and directory timestamp.
+      -s, --size        Show file byte size.
+      -t, --time        Show file and directory timestamp. (edit, access and create date time)
 
   Filtering options :
       -A, --all       Get hidden file and directory name.
@@ -45,7 +45,7 @@ proc nimlsHelp(): string =
   """
 
 proc nimlsVersion(): string =
-  return "Nimls : 0.0.0-develop"
+  return "Nimls : 0.1.0"
 
 proc getArguments(): Arguments =
   var optionStatements: OptionStatements = initOptionStatements()
@@ -67,9 +67,9 @@ proc getArguments(): Arguments =
           of "A", "all":
             optionStatements.isShowAll = true
           of "D", "dir":
-            optionStatements.isShowDir = false
+            optionStatements.isShowDir = true
           of "F", "file":
-            optionStatements.isShowFile = false
+            optionStatements.isShowFile = true
           of "i", "info":
             optionStatements.isShowInfo = true
             optionStatements.isShowPermission = true
@@ -86,14 +86,15 @@ proc getArguments(): Arguments =
             quit(failureMessage(key, "option"), QuitFailure)
       else:
         discard
+  if not(optionStatements.isShowFile or optionStatements.isShowDir):
+    optionStatements.isShowFile = true
+    optionStatements.isShowDir = true
   let arguments: Arguments = initArguments(path, optionStatements)
   return arguments
 
 # kindAndPath -> 名前変えたい
 proc nimls(arguments: Arguments) =
-  echo $arguments
   for kindAndPath in walkDir(arguments.path):
-    echo $kindAndPath
     if not arguments.statements.isShowAll and kindAndPath.path.contains("/."):
       continue
     if not arguments.statements.isShowDir and kindAndPath.kind == pcDir:
@@ -101,9 +102,10 @@ proc nimls(arguments: Arguments) =
     if not arguments.statements.isShowFile and kindAndPath.kind == pcFile:
       continue
     if arguments.statements.isRecurse and kindAndPath.kind == pcDir:
-      echo displayFormat(kindAndPath.kind, kindAndPath.path, "")
+      echo displayFormat(kindAndPath.kind, kindAndPath.path & ":", "")
       let nextDirArguments = initArguments(kindAndPath.path, arguments.statements)
       nimls(nextDirArguments)
+      echo ""
       continue
     let information: string = getInformation(arguments)
     echo displayFormat(kindAndPath.kind, kindAndPath.path, information)

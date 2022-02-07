@@ -16,8 +16,8 @@ type
 proc initOptionStatements*(): OptionStatements =
   let optionStatements: OptionStatements = (
     isShowAll: false,
-    isShowDir: true,
-    isShowFile: true,
+    isShowDir: false,
+    isShowFile: false,
     isRecurse: false,
     isShowInfo: false,
     isShowPermission: false,
