@@ -47,20 +47,15 @@ proc nimlsHelp(): string =
 proc nimlsVersion(): string =
   return "Nimls : 0.0.0-develop"
 
-proc debugShowInputArguments(kind: CmdLineKind, key, value: string): bool =
-  echo "kind : ", kind
-  echo "key : ", key
-  echo "value : ", value
-
 proc getArguments(): Arguments =
-  var arguments: Arguments = initArguments()
+  var optionStatements: OptionStatements = initOptionStatements()
+  var path: string = "./"
   var parserOption = initOptParser(commandLineParams().join(" "))
   for kind, key, value in parserOption.getOpt():
-    discard debugShowInputArguments(kind, key, value)
     case kind:
       of cmdArgument:
         if dirExists(key) or fileExists(key):
-          arguments.path = key
+          path = key
         else:
           quit(failureMessage(key, "path"), QuitFailure)
       of cmdShortOption, cmdLongOption:
@@ -70,79 +65,49 @@ proc getArguments(): Arguments =
           of "!", "version":
             quit(nimlsVersion(), QuitSuccess)
           of "A", "all":
-            arguments.isShowAll = true
+            optionStatements.isShowAll = true
           of "D", "dir":
-            arguments.isShowDir = false
+            optionStatements.isShowDir = false
           of "F", "file":
-            arguments.isShowFile = false
+            optionStatements.isShowFile = false
           of "i", "info":
-            arguments.isShowInfo = true
-            arguments.isShowPermission = true
-            arguments.isShowSize = true
+            optionStatements.isShowInfo = true
+            optionStatements.isShowPermission = true
+            optionStatements.isShowSize = true
           of "p", "permission":
-            arguments.isShowPermission = true
+            optionStatements.isShowPermission = true
           of "r", "recurse":
-            arguments.isRecurse = true
+            optionStatements.isRecurse = true
           of "s", "size":
-            arguments.isShowSize = true
+            optionStatements.isShowSize = true
           of "t", "time":
-            arguments.isShowTime = true
+            optionStatements.isShowTime = true
           else:
             quit(failureMessage(key, "option"), QuitFailure)
       else:
         discard
+  let arguments: Arguments = initArguments(path, optionStatements)
   return arguments
 
 # kindAndPath -> 名前変えたい
-proc showPath(arguments: Arguments) =
+proc nimls(arguments: Arguments) =
   echo $arguments
   for kindAndPath in walkDir(arguments.path):
     echo $kindAndPath
-    if not arguments.isShowAll and kindAndPath.path.contains("/."):
+    if not arguments.statements.isShowAll and kindAndPath.path.contains("/."):
       continue
-    if not arguments.isShowDir and kindAndPath.kind == pcDir:
+    if not arguments.statements.isShowDir and kindAndPath.kind == pcDir:
       continue
-    if not arguments.isShowFile and kindAndPath.kind == pcFile:
+    if not arguments.statements.isShowFile and kindAndPath.kind == pcFile:
       continue
-    var info, permission, size, created_at, access_at, modified_at: string
-    if arguments.isRecurse and kindAndPath.kind == pcDir:
-      echo "\n", displayFormat(fmt"{$kindAndPath.kind}", $kindAndPath.path, "")
-        #---- Argumentsからpathは切り離したほうが，全体的に都合がいい気がする
-      let nextDirArguments = inheritanceArguments(kindAndPath.path, arguments)
-      showPath(nextDirArguments)
-      echo ""
+    if arguments.statements.isRecurse and kindAndPath.kind == pcDir:
+      echo displayFormat(kindAndPath.kind, kindAndPath.path, "")
+      let nextDirArguments = initArguments(kindAndPath.path, arguments.statements)
+      nimls(nextDirArguments)
       continue
-    if arguments.isShowInfo:
-      info = getInfoString(kindAndPath.path)
-    elif not arguments.isShowInfo:
-      if arguments.isShowPermission:
-        permission = getPermissionsString(kindAndPath.path)
-      if arguments.isShowSize and kindAndPath.kind == pcFile:
-        size = getFileSizeString(kindAndPath.path)
-      if arguments.isShowTime:
-        created_at = getCreationTimeString(kindAndPath.path)
-        access_at = getLastAccessTimeString(kindAndPath.path)
-        modified_at = getLastModificationTimeString(kindAndPath.path)
-    echo displayFormat($kindAndPath.kind, $kindAndPath.path, info,
-                       permission, size, created_at, access_at, modified_at)
+    let information: string = getInformation(arguments)
+    echo displayFormat(kindAndPath.kind, kindAndPath.path, information)
 
 when isMainModule:
-  echo "==== getArguments test ===="
-  var arguments: Arguments = getArguments()
-  echo arguments
-
-  echo "==== show path test ===="
-  showPath(arguments)
-
-  echo "==== file start test ===="
-  arguments.path = "./testTest"
-  #---> cmdから直接ファイルを受け取った場合反応がない(walkDir(path)のところ)
-  showPath(arguments)
-
-  arguments.path = "./testDir"
-  echo "==== dir start test ===="
-  showPath(arguments)
-
-  arguments.isRecurse = true
-  echo "==== dir start recurse test ===="
-  showPath(arguments)
+  let arguments: Arguments = getArguments()
+  nimls(arguments)

@@ -21,7 +21,7 @@ proc displayFormat*(kind: PathComponent, path, information: string = ""): string
       displayKind = "lf"
     of pcLinkToDir:
       displayKind = "ld"
-  return &"{displayKind}:{path} \t {information}"
+  return fmt"{displayKind} {information} {path}"
 
 proc convertPermission*(permissions: set[FilePermission]): string =
   var user, group, others: int
@@ -51,44 +51,18 @@ proc getInfoString*(path: string): string =
   let info = getFileInfo(path)
   return fmt"{$info.linkCount}, {$info.blockSize}"
 
-# getFileInfo から取得に変更？ -> 変更決定
-proc getPermissionsString*(path: string): string =
-  let permissions = getFilePermissions(path)
-  return $convertPermission(permissions)
-
-# getFileInfo から取得に変更？ -> 変更決定
-# can not get directory size
-proc getFileSizeString*(path: string): string =
-  let size = getFileSize(path)
-  return $size
-
-# getFileInfo から取得に変更？ -> 変更決定
-proc getCreationTimeString*(path: string): string =
-  let creationTime = getCreationTime(path)
-  return $creationTime
-
-# getFileInfo から取得に変更？ -> 変更決定
-proc getLastAccessTimeString*(path: string): string =
-  let lastAccessTime = getLastAccessTime(path)
-  return $lastAccessTime
-
-# getFileInfo から取得に変更？ -> 変更決定
-proc getLastModificationTimeString*(path: string): string =
-  let lastModificationTime = getLastModificationTime(path)
-  return $lastModificationTime
-
 proc getInformation*(arguments: Arguments): string =
   let information = getFileInfo(arguments.path)
   var info, permission, size, modified_at, access_at, created_at: string
-  if arguments.isShowInfo:
+  if arguments.statements.isShowInfo:
     #id?, linkCount, blockSize
     info = $information.blockSize
     modified_at = $information.lastWriteTime.format("yy/MM/dd-HH:mm")
-  if arguments.isShowpermission:
+  if arguments.statements.isShowpermission:
     permission = convertPermission(information.permissions)
-  if arguments.isShowsize:
+  if arguments.statements.isShowsize:
     size = $information.size
-  if arguments.isShowtime:
+  if arguments.statements.isShowtime:
     modified_at = $information.lastWriteTime.format("yy/MM/dd(ddd)-HH:mm:ss")
     access_at = $information.lastAccessTime.format("yy/MM/dd(ddd)-HH:mm:ss")
     created_at = $information.creationTime.format("yy/MM/dd(ddd)-HH:mm:ss")
@@ -96,9 +70,10 @@ proc getInformation*(arguments: Arguments): string =
 
 
 when isMainModule:
-  let arguments: Arguments = initArguments(path="./testFile",
-                                           isShowInfo=true,
-                                           isShowpermission=true,
-                                           isShowsize=true,
-                                           isShowTime=true)
-  echo displayFormat(pcFile, "./testFile", getInformation(arguments))
+  var optionStatements: OptionStatements = initOptionStatements()
+  optionStatements.isShowInfo = true
+  optionStatements.isShowpermission = true
+  optionStatements.isShowsize = true
+  optionStatements.isShowTime = true
+  let arguments: Arguments = initArguments(path="./testFile", optionStatements)
+  echo displayFormat(pcFile, arguments.path, getInformation(arguments))
