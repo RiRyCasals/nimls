@@ -7,15 +7,10 @@ import
 import nimlsutils
 
 
-proc debugGetFileInfo(path: string) =
-  let info = getFileInfo(path)
-  echo path
-  echo "getFileInfo type: ", info.type
-  echo info
-
 proc getInfoString(path: string): string =
   let info = getFileInfo(path)
-  return $info
+  return fmt"{$info.linkCount}, {$info.blockSize}"
+
 
 proc getPermissionsString(path: string): string =
   let permissions = getFilePermissions(path)
@@ -62,7 +57,7 @@ proc getLastModificationTimeString(path: string): string =
   return $lastModificationTime
 
 proc echoStringFormat(kind, path, info, permission, size, created_at, access_at, modified_at: string): string =
-  return fmt"{kind} {path} {info} {size} {created_at} {access_at} {modified_at}"
+  return fmt"{kind} {path} {info} {permission} {size} {created_at} {access_at} {modified_at}"
 
 proc echoPath(arguments: Arguments) =
   for kindAndPath in walkDir(arguments.path):
@@ -81,11 +76,10 @@ proc echoPath(arguments: Arguments) =
   #==== display options ====
     var info, permission, size, created_at, access_at, modified_at: string
     if arguments.isShowInfo:
-      # getInfoString(kindAndPath.path)
-      echo "info test"
+      info = getInfoString(kindAndPath.path)
     if arguments.isShowPermission:
       permission = getPermissionsString(kindAndPath.path)
-    if arguments.isShowSize and kindAndPath.kind != pcDir:
+    if arguments.isShowSize and kindAndPath.kind == pcFile:
       size = getFileSizeString(kindAndPath.path)
     if arguments.isShowTime:
       created_at = getCreationTimeString(kindAndPath.path)
@@ -96,6 +90,7 @@ proc echoPath(arguments: Arguments) =
 
 when isMainModule:
   var arguments: Arguments = initArguments("./testFile")
+  arguments.isShowAll= true
   arguments.isShowAll= true
   arguments.isShowPermission = true
   arguments.isShowSize= true
