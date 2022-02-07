@@ -1,11 +1,38 @@
 import
   os,
   times,
-  strutils,
   strformat
 
-import nimlsutils
+const readPermission = 4
+const writePermission = 2
+const execPermission = 1
 
+proc displayFormat*(kind, path, info, permission, size, created_at, access_at, modified_at: string): string =
+  return fmt"{kind} {path} {info} {permission} {size} {created_at} {access_at} {modified_at}"
+
+proc convertPermissionToNumber*(permissions: set[FilePermission]): int =
+  var user, group, others: int
+  for permission in permissions:
+    case permission:
+      of fpUserRead:
+        user = user or readPermission
+      of fpUserWrite:
+        user = user or writePermission
+      of fpUserExec:
+        user = user or execPermission
+      of fpGroupRead:
+        group = group or readPermission
+      of fpGroupWrite:
+        group = group or writePermission
+      of fpGroupExec:
+        group = group or execPermission
+      of fpOthersRead:
+        others = others or readPermission
+      of fpOthersWrite:
+        others = others or writePermission
+      of fpOthersExec:
+        others = others or execPermission
+  return user * 100 +  group * 10 + others
 
 proc getInfoString*(path: string): string =
   let info = getFileInfo(path)
@@ -13,30 +40,7 @@ proc getInfoString*(path: string): string =
 
 proc getPermissionsString*(path: string): string =
   let permissions = getFilePermissions(path)
-  var userBit: uint8 = 0
-  var groupBit: uint8 = 0
-  var othersBit: uint8 = 0
-  for permission in permissions:
-    case permission:
-      of fpUserRead:
-        userBit = userBit or 4
-      of fpUserWrite:
-        userBit = userBit or 2
-      of fpUserExec:
-        userBit = userBit or 1
-      of fpGroupRead:
-        groupBit = groupBit or 4
-      of fpGroupWrite:
-        groupBit = groupBit or 2
-      of fpGroupExec:
-        groupBit = groupBit or 1
-      of fpOthersRead:
-        othersBit = othersBit or 4
-      of fpOthersWrite:
-        othersBit = othersBit or 2
-      of fpOthersExec:
-        othersBit = othersBit or 1
-  return $userBit & $groupBit & $othersBit
+  return $convertPermissionToNumber(permissions)
 
 # can not get directory size
 proc getFileSizeString*(path: string): string =
@@ -55,8 +59,17 @@ proc getLastModificationTimeString*(path: string): string =
   let lastModificationTime = getLastModificationTime(path)
   return $lastModificationTime
 
-proc displayFormat*(kind, path, info, permission, size, created_at, access_at, modified_at: string): string =
-  return fmt"{kind} {path} {info} {permission} {size} {created_at} {access_at} {modified_at}"
-
 
 when isMainModule:
+  echo "test format: ", displayFormat("kind", "path", "info", "permission", "size", "created_at", "access_at", "modified_at")
+  echo "dir  info: ", getInfoString("./testDir")
+  echo "file info: ", getInfoString("./testFile")
+  echo "dir  permission: ", getPermissionsString("./testDir")
+  echo "file permission: ", getPermissionsString("./testFile")
+  echo "file size: ", getFileSizeString("./testFile")
+  echo "dir  created_at: ", getCreationTimeString("./testDir")
+  echo "file created_at: ", getCreationTimeString("./testFile")
+  echo "dir  access_at: ", getLastAccessTimeString("./testDir")
+  echo "file access_at: ", getLastAccessTimeString("./testFile")
+  echo "dir  modified_at: ", getLastModificationTimeString("./testDir")
+  echo "file modified_at: ", getLastModificationTimeString("./testFile")
