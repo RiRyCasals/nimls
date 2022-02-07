@@ -1,7 +1,8 @@
 import
   os,
   times,
-  strutils
+  strutils,
+  strformat
 
 import nimlsutils
 
@@ -12,17 +13,11 @@ proc debugGetFileInfo(path: string) =
   echo "getFileInfo type: ", info.type
   echo info
 
-proc getFileInfoString(path: string): string =
+proc getInfoString(path: string): string =
   let info = getFileInfo(path)
   return $info
 
-proc debugGetFilePermissions(path: string) =
-  let permission = getFilePermissions(path)
-  echo path
-  echo "getFilePermissions type: ", permission.type
-  echo permission
-
-proc getFilePermissionsString(path: string): string =
+proc getPermissionsString(path: string): string =
   let permissions = getFilePermissions(path)
   var userBit: uint8 = 0
   var groupBit: uint8 = 0
@@ -49,106 +44,62 @@ proc getFilePermissionsString(path: string): string =
         othersBit = othersBit or 1
   return $userBit & $groupBit & $othersBit
 
-proc debugGetFileSize(path: string) =
+# can not get directory size
+proc getFileSizeString(path: string): string =
   let size = getFileSize(path)
-  echo path
-  echo "getFileSize type: ", size.type
-  echo size
+  return $size
 
-proc debugGetCreationTime(path: string) =
+proc getCreationTimeString(path: string): string =
   let creationTime = getCreationTime(path)
-  echo path
-  echo "getLastAccessTime type: ", creationTime.type
-  echo creationTime
+  return $creationTime
 
-proc debugGetLastAccessTime(path: string) =
+proc getLastAccessTimeString(path: string): string =
   let lastAccessTime = getLastAccessTime(path)
-  echo path
-  echo "getLastAccessTime type: ", lastAccessTime.type
-  echo lastAccessTime
+  return $lastAccessTime
 
-proc debugGetLastModificationTime(path: string) =
+proc getLastModificationTimeString(path: string): string =
   let lastModificationTime = getLastModificationTime(path)
-  echo path
-  echo "getLastAccessTime type: ", lastModificationTime.type
-  echo lastModificationTime
+  return $lastModificationTime
+
+proc echoStringFormat(kind, path, info, permission, size, created_at, access_at, modified_at: string): string =
+  return fmt"{kind} {path} {info} {size} {created_at} {access_at} {modified_at}"
 
 proc echoPath(arguments: Arguments) =
   for kindAndPath in walkDir(arguments.path):
   #==== filter options ====
-    if arguments.isRecurse and kindAndPath.kind == pcDir:
-      let nextDieArguments: Arguments = initArguments(kindAndPath.path)
-      echo "\n d: " & $kindAndPath.path
-      echoPath(nextDieArguments)
-      continue
     if not arguments.isShowAll and kindAndPath.path.contains("/."):
       continue
     if not arguments.isShowDir and kindAndPath.kind == pcDir:
       continue
     if not arguments.isShowFile and kindAndPath.kind == pcFile:
       continue
+    if arguments.isRecurse and kindAndPath.kind == pcDir:
+      let nextDieArguments: Arguments = initArguments(kindAndPath.path)
+      echo "\n d: " & $kindAndPath.path
+      echoPath(nextDieArguments)
+      continue
   #==== display options ====
-    var info, permission, created_at, access_at, modified_at: string
+    var info, permission, size, created_at, access_at, modified_at: string
     if arguments.isShowInfo:
-      # getFileInfo(kindAndPath.path) を整形するproc
-      echo "test"
+      # getInfoString(kindAndPath.path)
+      echo "info test"
     if arguments.isShowPermission:
-      permission = getFilePermissionsstring(kindAndPath.path)
+      permission = getPermissionsString(kindAndPath.path)
     if arguments.isShowSize and kindAndPath.kind != pcDir:
-      #getFileSize(kindAndPath.path) を整形するproc
-      echo "test"
+      size = getFileSizeString(kindAndPath.path)
     if arguments.isShowTime:
-      #getCreationTime(kindAndPath.path) を整形するproc
-      #getLastAccessTime(kindAndPath.path) を整形するproc
-      #getLastModificationTime(kindAndPath.path) を整形するproc
-      echo "test"
-    echo $kindAndPath.kind & $kindAndPath.path & $info & $permission & $created_at & $access_at & $modified_at
+      created_at = getCreationTimeString(kindAndPath.path)
+      access_at = getLastAccessTimeString(kindAndPath.path)
+      modified_at = getLastModificationTimeString(kindAndPath.path)
+    echo echoStringFormat($kindAndPath.kind, $kindAndPath.path, info, permission, size, created_at, access_at, modified_at)
 
 
 when isMainModule:
-  echo "\n"
-
-#[
-  debugGetFileInfo("./testFile")
-  echo "\n"
-
-  debugGetFileInfo("./testDir")
-  echo "\n"
-
-  debugGetFilePermissions ("./testFile")
-  echo "\n"
-  debugGetFilePermissions ("./testDir")
-  echo "\n"
-  
-  echo "file"
-  echo getFilePermissionsString("./testFile")
-  echo "\n"
-
-  echo "dir"
-  echo getFilePermissionsString("./testDir")
-  echo "\n"
-
-  debugGetFileSize("./testFile") # can not directory
-  echo "\n"
-
-  debugGetCreationTime("./testFile")
-  echo "\n"
-  debugGetCreationTime("./testDir")
-  echo "\n"
-
-  debugGetLastAccessTime("./testFile")
-  echo "\n"
-  debugGetLastAccessTime("./testDir")
-  echo "\n"
-
-  discard debugGetLastModificationTime("./testFile")
-  echo "\n"
-  debugGetLastModificationTime("./testDir")
-  echo "\n"
-]#
-
   var arguments: Arguments = initArguments("./testFile")
+  arguments.isShowAll= true
   arguments.isShowPermission = true
+  arguments.isShowSize= true
+  arguments.isShowTime= true
 
   echo "file"
   echoPath(arguments) #---> cmdから直接ファイルを受け取った場合反応がない（waldDir(filePath)で止まるので)
@@ -158,5 +109,8 @@ when isMainModule:
   echo "Dir"
   echoPath(arguments)
   echo "\n"
-#[
-]#
+
+  arguments.isRecurse = true
+  echo "Dir"
+  echoPath(arguments)
+  echo "\n"
