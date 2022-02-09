@@ -2,7 +2,7 @@ import
   os,
   times,
   strformat,
-  nimlsutils
+  utils
 
 const readPermission = 4
 const writePermission = 2

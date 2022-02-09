@@ -3,8 +3,8 @@ import
   strutils,
   strformat,
   parseopt,
-  nimlsutils,
-  nimlsoptions
+  utils,
+  options
 
 
 proc failureMessage(errorCause: string, errorCase: string): string =
