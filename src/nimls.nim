@@ -91,24 +91,32 @@ proc getArguments(): Arguments =
   let arguments: Arguments = initArguments(path, optionStatements)
   return arguments
 
+proc nimls(arguments: Arguments)
+
+proc displayInformation(kindAndPath: tuple, arguments: Arguments) =
+  if not arguments.statements.isShowAll and kindAndPath.path.contains("/."):
+    return
+  if not arguments.statements.isShowDir and kindAndPath.kind == pcDir:
+    return
+  if not arguments.statements.isShowFile and kindAndPath.kind == pcFile:
+    return
+  if arguments.statements.isRecurse and kindAndPath.kind == pcDir:
+    echo displayFormat(kindAndPath.kind, kindAndPath.path & ":", "")
+    let nextDirArguments = initArguments(kindAndPath.path, arguments.statements)
+    nimls(nextDirArguments)
+    echo ""
+    return
+  let information: string = getInformation(arguments)
+  echo displayFormat(kindAndPath.kind, kindAndPath.path, information)
+
 # kindAndPath -> 名前変えたい
 proc nimls(arguments: Arguments) =
   for kindAndPath in walkDir(arguments.path):
-    if not arguments.statements.isShowAll and kindAndPath.path.contains("/."):
-      continue
-    if not arguments.statements.isShowDir and kindAndPath.kind == pcDir:
-      continue
-    if not arguments.statements.isShowFile and kindAndPath.kind == pcFile:
-      continue
-    if arguments.statements.isRecurse and kindAndPath.kind == pcDir:
-      echo displayFormat(kindAndPath.kind, kindAndPath.path & ":", "")
-      let nextDirArguments = initArguments(kindAndPath.path, arguments.statements)
-      nimls(nextDirArguments)
-      echo ""
-      continue
-    let information: string = getInformation(arguments)
-    echo displayFormat(kindAndPath.kind, kindAndPath.path, information)
+    displayInformation(kindAndPath, arguments)
 
 when isMainModule:
   let arguments: Arguments = getArguments()
-  nimls(arguments)
+  if fileExists(arguments.path):
+    displayInformation((kind: pcFile, path: arguments.path), arguments)
+  else:
+    nimls(arguments)
