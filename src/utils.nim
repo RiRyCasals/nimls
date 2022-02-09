@@ -13,6 +13,11 @@ type
     path*: string
     statements*: OptionStatements
 
+  ErrorCase* = enum
+    notFoundPath,
+    notDefinedOption
+
+
 proc initOptionStatements*(): OptionStatements =
   let optionStatements: OptionStatements = (
     isShowAll: false,

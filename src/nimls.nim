@@ -7,14 +7,13 @@ import
   options
 
 
-proc failureMessage(errorCause: string, errorCase: string): string =
+proc failureMessage(errorCause: string, errorCase: ErrorCase): string =
   case errorCase:
-    of "path":
+    of notFoundPath:
       return fmt"nimls : '{$errorCause}' file or directory is not found."
-    of "option":
+    of notDefinedOption:
       return fmt"nimls : '{$errorCause}' option is not defined."
-    else:
-      return fmt"nimls : Quit because an error occurred due to '{$errorCause}'."
+  return fmt"nimls : Quit because an error occurred due to '{$errorCause}'."
 
 proc nimlsHelp(): string =
   return """
@@ -57,7 +56,7 @@ proc getArguments(): Arguments =
         if dirExists(key) or fileExists(key):
           path = key
         else:
-          quit(failureMessage(key, "path"), QuitFailure)
+          quit(failureMessage(key, notFoundPath), QuitFailure)
       of cmdShortOption, cmdLongOption:
         case key:
           of "?", "help":
@@ -83,7 +82,7 @@ proc getArguments(): Arguments =
           of "t", "time":
             optionStatements.isShowTime = true
           else:
-            quit(failureMessage(key, "option"), QuitFailure)
+            quit(failureMessage(key, notDefinedOption), QuitFailure)
       else:
         discard
   if not(optionStatements.isShowFile or optionStatements.isShowDir):
